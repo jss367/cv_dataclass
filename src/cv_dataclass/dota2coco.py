@@ -156,11 +156,12 @@ if __name__ == "__main__":
         'E:\\Data\\Raw\\DOTA\\train\\images\\part1\\images',
         'E:\\Data\\Raw\\DOTA\\train\\images\\part2\\images',
         'E:\\Data\\Raw\\DOTA\\train\\images\\part3\\images']
+    train_filename = 'dota2coco_train.json'
     # note i'm using horizontal labels now
     val_label_path = r'E:\Data\Raw\DOTA\val\labelTxt-v1.5\DOTA-v1.5_val_hbb'
     val_image_paths = [r'E:\Data\Raw\DOTA\val\part1\images']
     val_filename = 'dota2coco_val.json'
     dest_folder = 'E:\\Data\\Processed\\DOTACOCO'
 
-    #DOTA2COCO(label_path, image_paths, dest_folder, dest_filename)
+    #DOTA2COCO(label_path, image_paths, dest_folder, train_filename)
     DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
