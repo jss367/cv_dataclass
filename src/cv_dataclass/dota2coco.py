@@ -3,8 +3,15 @@ This includes the categories added in version 1.5
 
 TODO: What should image_data['id'] be?
 TODO: Should number be forced to ints? If so, when?
+
+http://cocodataset.org/#format-data
+
+COCO consists of an overall datadict, which contains an info dict, images dicts,
+annotation dicts, and a license dict
+
 """
-from dataclass import BoundingBox
+#from cv_dataclass.bounding_box import BoundingBox
+from src.cv_dataclass.bounding_box import BoundingBox
 import json
 import os
 from pathlib import Path
