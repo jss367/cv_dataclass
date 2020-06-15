@@ -9,6 +9,11 @@ http://cocodataset.org/#format-data
 COCO consists of an overall datadict, which contains an info dict, images dicts,
 annotation dicts, and a license dict
 
+
+This file dumps a datadict, which contains everything
+
+
+
 """
 #from cv_dataclass.bounding_box import BoundingBox
 from src.cv_dataclass.bounding_box import BoundingBox
@@ -74,23 +79,23 @@ def parse_label_file(filename: Path):
 
 
 def get_files(my_dir: Path):
-    res = my_dir.glob('**/*')
-    files = [f for f in res if f.is_file()]
+    files_and_folders = my_dir.glob('**/*')
+    files = [f for f in files_and_folders if f.is_file()]
     return files
 
 
-def create_image_item(im_path: Path):
+def create_image_item(im_path: Path, image_id: int):
     im = cv2.imread(str(im_path))
     height, width, channels = im.shape
     image_data = {}
     image_data['file_name'] = im_path.name
     image_data['height'] = height
     image_data['width'] = width
-    image_data['id'] = im_path.stem
+    image_data['id'] = image_id
     return image_data
 
 
-def DOTA2COCO(label_path: PathOrStr, image_paths: List[PathOrStr], dest_folder: PathOrStr):
+def DOTA2COCO(label_path: PathOrStr, image_paths: List[PathOrStr], dest_folder: PathOrStr, dest_filename: PathOrStr):
 
     # Convert all to pathlib Paths
     label_path = Path(label_path)
@@ -122,7 +127,7 @@ def DOTA2COCO(label_path: PathOrStr, image_paths: List[PathOrStr], dest_folder: 
 
     for my_file in all_images[:10]:
 
-        data_dict['images'].append(create_image_item(my_file))
+        data_dict['images'].append(create_image_item(my_file, image_id))
         label_file = label_path / (my_file.stem + '.txt')
 
         objects = parse_label_file(label_file)
@@ -139,17 +144,23 @@ def DOTA2COCO(label_path: PathOrStr, image_paths: List[PathOrStr], dest_folder: 
             inst_count = inst_count + 1
         image_id = image_id + 1
 
-    output_json = dest_folder / 'dota2coco.json'
+    output_json = dest_folder / dest_filename
     with open(output_json, 'w') as f_out:
         json.dump(data_dict, f_out)
 
 
 if __name__ == "__main__":
 
-    label_path = 'E:\\Data\\Raw\\DOTA\\train\\labelTxt\\DOTA-v1.5_train'
-    image_paths = [
+    train_label_path = 'E:\\Data\\Raw\\DOTA\\train\\labelTxt\\DOTA-v1.5_train'
+    train_image_paths = [
         'E:\\Data\\Raw\\DOTA\\train\\images\\part1\\images',
         'E:\\Data\\Raw\\DOTA\\train\\images\\part2\\images',
         'E:\\Data\\Raw\\DOTA\\train\\images\\part3\\images']
+    # note i'm using horizontal labels now
+    val_label_path = r'E:\Data\Raw\DOTA\val\labelTxt-v1.5\DOTA-v1.5_val_hbb'
+    val_image_paths = [r'E:\Data\Raw\DOTA\val\part1\images']
+    val_filename = 'dota2coco_val.json'
     dest_folder = 'E:\\Data\\Processed\\DOTACOCO'
-    DOTA2COCO(label_path, image_paths, dest_folder)
+
+    #DOTA2COCO(label_path, image_paths, dest_folder, dest_filename)
+    DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
