@@ -125,7 +125,7 @@ def DOTA2COCO(label_path: PathOrStr, image_paths: List[PathOrStr], dest_folder: 
     inst_count = 1
     image_id = 1
 
-    for my_file in all_images[:10]:
+    for my_file in all_images:
 
         data_dict['images'].append(create_image_item(my_file, image_id))
         label_file = label_path / (my_file.stem + '.txt')
@@ -163,5 +163,5 @@ if __name__ == "__main__":
     val_filename = 'dota2coco_val.json'
     dest_folder = 'E:\\Data\\Processed\\DOTACOCO'
 
-    #DOTA2COCO(label_path, image_paths, dest_folder, train_filename)
-    DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
+    DOTA2COCO(train_label_path, train_image_paths, dest_folder, train_filename)
+    #DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
