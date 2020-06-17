@@ -15,14 +15,18 @@ This file dumps a datadict, which contains everything
 
 
 """
-#from cv_dataclass.bounding_box import BoundingBox
-from src.cv_dataclass.bounding_box import BoundingBox
+import pandas as pd
 import json
 import os
+import pickle
+from collections import Counter
 from pathlib import Path
 from typing import List, Union
 
+
 import cv2
+#from cv_dataclass.bounding_box import BoundingBox
+from src.cv_dataclass.bounding_box import BoundingBox
 
 PathOrStr = Union[Path, str]
 
@@ -54,9 +58,15 @@ def parse_label_file(filename: Path):
     """
     parse through the DOTA label files
     """
-    objects = []
     with open(filename, 'r') as f:
+        source = ''
+        gsd = ''
+        #i = 0
         for _, line in enumerate(f):
+            #i += 1
+            #print(i)
+            #if i == 1000:
+            #    print('yes')
             splitlines = line.strip().split(' ')
             if len(splitlines) == 1:
                 if 'imagesource' in line:
@@ -65,22 +75,13 @@ def parse_label_file(filename: Path):
                     _, gsd = splitlines[0].split(':')
                 else:
                     print("unknown metadata field")
+                if source and gsd:
+                    return source, gsd
                 continue
-            elif len(splitlines) < 9:
-                raise InputDataException("Not enough input data fields")
-                continue
-            category = None
-            if len(splitlines) >= 9:
-                category = splitlines[8]
-            bbox = BoundingBox.read_dota_data([
-                (float(splitlines[0]), float(splitlines[1])),
-                (float(splitlines[2]), float(splitlines[3])),
-                (float(splitlines[4]), float(splitlines[5])),
-                (float(splitlines[6]), float(splitlines[7])),
-            ], category)
-            bbox.difficult = '0' if len(splitlines) == 9 else splitlines[9]
-            objects.append(bbox)
-    return objects, source, gsd
+            #elif len(splitlines) < 9:
+            #    raise InputDataException("Not enough input data fields")
+            #    continue
+    return source, gsd
 
 
 def get_files(my_dir: Path):
@@ -104,70 +105,54 @@ def DOTA2COCO(
         label_path: PathOrStr,
         image_paths: List[PathOrStr],
         dest_folder: PathOrStr,
-        dest_filename: PathOrStr,
-        analyze_metadata: bool = False):
+        dest_filename: PathOrStr):
 
     # Convert all to pathlib Paths
     label_path = Path(label_path)
-    image_paths = [Path(p) for p in image_paths]
     dest_folder = Path(dest_folder)
 
     os.makedirs(dest_folder, exist_ok=True)
 
     # go through images and get the label
     all_labels = get_files(label_path)
+    #i = 0
+    null_gsd_sources = []
+    for label in all_labels:
+        #i += 1
+        #if i == 1100:
+        #    print('hi')
+        all_sources = []
+        all_gsds = []
+        for my_file in all_labels:
 
-    all_images = []
-    for path in image_paths:
-        all_images.extend(get_files(path))
+            sources, gsds = parse_label_file(my_file)
+            all_sources.append(sources)
+            if gsds == 'null':
+                null_gsd_sources.append(sources)
+            else:
+                all_gsds.append(float(gsds))
 
-    assert len(all_labels) == len(
-        all_images), f"Should have equal labels and images, but have {len(all_labels)} labels and {len(all_images)} images"
+    print(all_sources)
+    c = Counter(all_sources)
+    print(c)
 
-    data_dict = {}
-    data_dict['images'] = []
-    data_dict['categories'] = []
-    data_dict['annotations'] = []
-    for idex, name in enumerate(dota_category_dict):
-        single_cat = {'id': idex + 1, 'name': name, 'supercategory': name}
-        data_dict['categories'].append(single_cat)
+    print(all_gsds)
+    with open('sources.pkl', 'wb') as f:
+        pickle.dump(all_sources, f)
 
-    inst_count = 1
-    image_id = 1
+    with open('gsd.pkl', 'wb') as f:
+        pickle.dump(all_gsds, f)
 
-    all_sources = []
-    all_gsds = []
-    for my_file in all_images:
 
-        data_dict['images'].append(create_image_item(my_file, image_id))
-        label_file = label_path / (my_file.stem + '.txt')
 
-        objects, sources, gsds = parse_label_file(label_file)
-        all_sources.append(sources)
-        all_gsds.append(gsds)
-        for obj in objects:
-            single_obj = {}
-            single_obj['area'] = obj.area
-            single_obj['category_id'] = dota_category_dict[obj.category]
-            single_obj['segmentation'] = obj.to_coords()
-            single_obj['iscrowd'] = 0
-            single_obj['bbox'] = obj.to_coco()
-            single_obj['image_id'] = image_id
-            data_dict['annotations'].append(single_obj)
-            single_obj['id'] = inst_count
-            inst_count = inst_count + 1
-        image_id = image_id + 1
-
-    output_json = dest_folder / dest_filename
-    with open(output_json, 'w') as f_out:
-        json.dump(data_dict, f_out)
-
-    if analyze_metadata:
-        print(all_sources)
-        print(all_gsds)
 
 
 if __name__ == "__main__":
+
+    with open('gsd.pkl', 'rb') as f:
+        mynewlist = pickle.load(f)
+
+    #plot_histo(mynewlist)
 
     train_label_path = 'E:\\Data\\Raw\\DOTA\\train\\labelTxt\\DOTA-v1.5_train'
     train_image_paths = [
@@ -181,10 +166,9 @@ if __name__ == "__main__":
     val_filename = 'dota2coco_val.json'
     dest_folder = 'E:\\Data\\Processed\\DOTACOCO'
 
-    DOTA2COCO(
-        train_label_path,
-        train_image_paths,
-        dest_folder,
-        train_filename,
-        analyze_metadata=True)
-    #DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
+    #DOTA2COCO(
+    #    train_label_path,
+    #    train_image_paths,
+    #    dest_folder,
+    #    train_filename)
+    DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
