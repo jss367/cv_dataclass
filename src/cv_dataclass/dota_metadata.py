@@ -145,12 +145,9 @@ def DOTA2COCO(
 
 
 
-
-
 if __name__ == "__main__":
 
-    with open('gsd.pkl', 'rb') as f:
-        mynewlist = pickle.load(f)
+
 
     #plot_histo(mynewlist)
 

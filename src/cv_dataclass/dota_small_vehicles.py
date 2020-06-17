@@ -22,6 +22,7 @@ from typing import List, Union
 from collections import Counter
 from matplotlib import pyplot as plt
 import cv2
+import pickle
 
 PathOrStr = Union[Path, str]
 
@@ -56,21 +57,24 @@ def parse_label_file(filename: Path):
     with open(filename, 'r') as f:
         source = ''
         gsd = ''
+        objects = []
         for _, line in enumerate(f):
             splitlines = line.strip().split(' ')
-            if len(splitlines) == 1:
-                if 'imagesource' in line:
-                    _, source = splitlines[0].split(':')
-                elif 'gsd' in line:
-                    _, gsd = splitlines[0].split(':')
-                else:
-                    print("unknown metadata field")
-                if source and gsd:
-                    return source, gsd
+            category = None
+            if len(splitlines) < 8:
                 continue
-            #elif len(splitlines) < 9:
-            #    raise InputDataException("Not enough input data fields")
-            #    continue
+            if len(splitlines) >= 9:
+                category = splitlines[8]
+            if 'vehicle' in category:
+                print(category)
+                bbox = BoundingBox.get_area([
+                    (float(splitlines[0]), float(splitlines[1])),
+                    (float(splitlines[2]), float(splitlines[3])),
+                    (float(splitlines[4]), float(splitlines[5])),
+                    (float(splitlines[6]), float(splitlines[7])),
+                ], category)
+                bbox.difficult = '0' if len(splitlines) == 9 else splitlines[9]
+                objects.append(bbox)
     return source, gsd
 
 
@@ -92,54 +96,54 @@ def create_image_item(im_path: Path, image_id: int):
 
 
 def DOTA2COCO(
-        label_path: PathOrStr,
-        image_paths: List[PathOrStr],
-        dest_folder: PathOrStr,
-        dest_filename: PathOrStr):
+        label_path: PathOrStr,):
 
     # Convert all to pathlib Paths
     label_path = Path(label_path)
-    dest_folder = Path(dest_folder)
-
-    os.makedirs(dest_folder, exist_ok=True)
 
     # go through images and get the label
     all_labels = get_files(label_path)
+    #i = 0
+    null_gsd_sources = []
     for label in all_labels:
+        #i += 1
+        #if i == 1100:
+        #    print('hi')
         all_sources = []
         all_gsds = []
         for my_file in all_labels:
 
             sources, gsds = parse_label_file(my_file)
             all_sources.append(sources)
-            all_gsds.append(gsds)
+            if gsds == 'null':
+                null_gsd_sources.append(sources)
+            else:
+                all_gsds.append(float(gsds))
 
     print(all_sources)
     c = Counter(all_sources)
     print(c)
 
     print(all_gsds)
-    plt.hist(all_gsds)
-    plt.savefig('test.png')
+    with open('sources.pkl', 'wb') as f:
+        pickle.dump(all_sources, f)
+
+    with open('gsd.pkl', 'wb') as f:
+        pickle.dump(all_gsds, f)
 
 
 if __name__ == "__main__":
 
     train_label_path = 'E:\\Data\\Raw\\DOTA\\train\\labelTxt\\DOTA-v1.5_train'
-    train_image_paths = [
-        'E:\\Data\\Raw\\DOTA\\train\\images\\part1\\images',
-        'E:\\Data\\Raw\\DOTA\\train\\images\\part2\\images',
-        'E:\\Data\\Raw\\DOTA\\train\\images\\part3\\images']
     train_filename = 'dota2coco_train.json'
     # note i'm using horizontal labels now
     val_label_path = r'E:\Data\Raw\DOTA\val\labelTxt-v1.5\DOTA-v1.5_val_hbb'
-    val_image_paths = [r'E:\Data\Raw\DOTA\val\part1\images']
     val_filename = 'dota2coco_val.json'
     dest_folder = 'E:\\Data\\Processed\\DOTACOCO'
 
-    DOTA2COCO(
-        train_label_path,
-        train_image_paths,
-        dest_folder,
-        train_filename)
-    #DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
+    #DOTA2COCO(
+    #    train_label_path,
+    #    train_image_paths,
+    #    dest_folder,
+    #    train_filename)
+    DOTA2COCO(val_label_path)

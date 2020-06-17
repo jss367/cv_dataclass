@@ -21,7 +21,7 @@ import json
 import os
 from pathlib import Path
 from typing import List, Union
-
+import pickle
 import cv2
 
 PathOrStr = Union[Path, str]
@@ -137,6 +137,7 @@ def DOTA2COCO(
 
     all_sources = []
     all_gsds = []
+    all_objects = []
     for my_file in all_images:
 
         data_dict['images'].append(create_image_item(my_file, image_id))
@@ -145,6 +146,7 @@ def DOTA2COCO(
         objects, sources, gsds = parse_label_file(label_file)
         all_sources.append(sources)
         all_gsds.append(gsds)
+        all_objects.append(objects)
         for obj in objects:
             single_obj = {}
             single_obj['area'] = obj.area
@@ -162,9 +164,8 @@ def DOTA2COCO(
     with open(output_json, 'w') as f_out:
         json.dump(data_dict, f_out)
 
-    if analyze_metadata:
-        print(all_sources)
-        print(all_gsds)
+    with open('objs.pkl', 'wb') as f:
+        pickle.dump(all_objects, f)
 
 
 if __name__ == "__main__":

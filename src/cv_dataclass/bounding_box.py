@@ -14,6 +14,23 @@ class BoundingBox: # horizontal
     def area(self):
         return self.width * self.height
 
+    def clean_poly(shapely_poly):
+        if not shapely_poly.is_valid:
+            print("bad poly corrected")
+            buffer_pts = shapely_poly.buffer(0).exterior.coords.xy
+            fixed_coords = [[int(buffer_pts[0][i]), int(buffer_pts[1][i])]
+                            for i in range(len(buffer_pts[0]))]
+            shapely_poly = Polygon(fixed_coords)
+        return shapely_poly
+
+    def get_area(coords, category=None):
+        """[(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
+        this makes correction if box not perfect... maybe make "correct" an arugument?
+        """
+        shapely_poly = BoundingBox.clean_poly(Polygon(coords))
+
+        return shapely_poly.area
+
     def read_dota_data(coords, category=None):
         """[(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
         this makes correction if box not perfect... maybe make "correct" an arugument?
@@ -22,7 +39,8 @@ class BoundingBox: # horizontal
         # bad data check and correct
         if not shapely_poly.is_valid:
             buffer_pts = shapely_poly.buffer(0).exterior.coords.xy
-            fixed_coords = [[int(buffer_pts[0][i]), int(buffer_pts[1][i])] for i in range(len(buffer_pts[0]))]
+            fixed_coords = [[int(buffer_pts[0][i]), int(buffer_pts[1][i])]
+                            for i in range(len(buffer_pts[0]))]
             shapely_poly = Polygon(fixed_coords)
         x, y = shapely_poly.exterior.coords.xy
         top_left_x = min(x)
