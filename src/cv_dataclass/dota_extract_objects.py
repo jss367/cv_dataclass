@@ -14,7 +14,7 @@ This file dumps a datadict, which contains everything
 
 """
 #from cv_dataclass.bounding_box import BoundingBox
-from src.cv_dataclass.bounding_box import BoundingBox
+from cv_dataclass.bounding_box import BoundingBox
 import json
 import os
 from pathlib import Path
@@ -55,8 +55,8 @@ def parse_label_file(filename: Path):
     parse through the DOTA label files
     """
     with open(filename, 'r') as f:
-        source = ''
-        gsd = ''
+        #source = ''
+        #gsd = ''
         objects = []
         for _, line in enumerate(f):
             splitlines = line.strip().split(' ')
@@ -65,17 +65,16 @@ def parse_label_file(filename: Path):
                 continue
             if len(splitlines) >= 9:
                 category = splitlines[8]
-            if 'vehicle' in category:
-                print(category)
-                bbox = BoundingBox.get_area([
-                    (float(splitlines[0]), float(splitlines[1])),
-                    (float(splitlines[2]), float(splitlines[3])),
-                    (float(splitlines[4]), float(splitlines[5])),
-                    (float(splitlines[6]), float(splitlines[7])),
-                ], category)
-                bbox.difficult = '0' if len(splitlines) == 9 else splitlines[9]
-                objects.append(bbox)
-    return source, gsd
+
+            bbox = BoundingBox.read_dota_data([
+                (float(splitlines[0]), float(splitlines[1])),
+                (float(splitlines[2]), float(splitlines[3])),
+                (float(splitlines[4]), float(splitlines[5])),
+                (float(splitlines[6]), float(splitlines[7])),
+            ], category)
+            #bbox.difficult = '0' if len(splitlines) == 9 else splitlines[9]
+            objects.append(bbox)
+    return objects
 
 
 def get_files(my_dir: Path):
@@ -95,8 +94,7 @@ def create_image_item(im_path: Path, image_id: int):
     return image_data
 
 
-def DOTA2COCO(
-        label_path: PathOrStr,):
+def DOTA2COCO(label_path: PathOrStr,):
 
     # Convert all to pathlib Paths
     label_path = Path(label_path)
@@ -104,32 +102,13 @@ def DOTA2COCO(
     # go through images and get the label
     all_labels = get_files(label_path)
     #i = 0
-    null_gsd_sources = []
+    all_objects = []
     for label in all_labels:
-        #i += 1
-        #if i == 1100:
-        #    print('hi')
-        all_sources = []
-        all_gsds = []
-        for my_file in all_labels:
+        objects = parse_label_file(label)
+        all_objects.append(objects)
 
-            sources, gsds = parse_label_file(my_file)
-            all_sources.append(sources)
-            if gsds == 'null':
-                null_gsd_sources.append(sources)
-            else:
-                all_gsds.append(float(gsds))
-
-    print(all_sources)
-    c = Counter(all_sources)
-    print(c)
-
-    print(all_gsds)
-    with open('sources.pkl', 'wb') as f:
-        pickle.dump(all_sources, f)
-
-    with open('gsd.pkl', 'wb') as f:
-        pickle.dump(all_gsds, f)
+    with open('objects.pkl', 'wb') as f:
+        pickle.dump(all_objects, f)
 
 
 if __name__ == "__main__":
