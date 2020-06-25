@@ -9,24 +9,14 @@ http://cocodataset.org/#format-data
 COCO consists of an overall datadict, which contains an info dict, images dicts,
 annotation dicts, and a license dict
 
-
 This file dumps a datadict, which contains everything
-
-
-
 """
-import pandas as pd
-import json
 import os
 import pickle
-from collections import Counter
 from pathlib import Path
 from typing import List, Union
 
-
 import cv2
-#from cv_dataclass.bounding_box import BoundingBox
-from src.cv_dataclass.bounding_box import BoundingBox
 
 PathOrStr = Union[Path, str]
 
@@ -63,10 +53,6 @@ def parse_label_file(filename: Path):
         gsd = ''
         #i = 0
         for _, line in enumerate(f):
-            #i += 1
-            #print(i)
-            #if i == 1000:
-            #    print('yes')
             splitlines = line.strip().split(' ')
             if len(splitlines) == 1:
                 if 'imagesource' in line:
@@ -104,8 +90,7 @@ def create_image_item(im_path: Path, image_id: int):
 def DOTA2COCO(
         label_path: PathOrStr,
         image_paths: List[PathOrStr],
-        dest_folder: PathOrStr,
-        dest_filename: PathOrStr):
+        dest_folder: PathOrStr):
 
     # Convert all to pathlib Paths
     label_path = Path(label_path)
@@ -132,15 +117,15 @@ def DOTA2COCO(
             else:
                 all_gsds.append(float(gsds))
 
-    print(all_sources)
-    c = Counter(all_sources)
-    print(c)
+    #print(all_sources)
+    #c = Counter(all_sources)
+    #print(c)
 
-    print(all_gsds)
-    with open('sources.pkl', 'wb') as f:
+    #print(all_gsds)
+    with open(dest_folder / 'sources.pkl', 'wb') as f:
         pickle.dump(all_sources, f)
 
-    with open('gsd.pkl', 'wb') as f:
+    with open(dest_folder / 'gsd.pkl', 'wb') as f:
         pickle.dump(all_gsds, f)
 
 
@@ -156,16 +141,15 @@ if __name__ == "__main__":
         'E:\\Data\\Raw\\DOTA\\train\\images\\part1\\images',
         'E:\\Data\\Raw\\DOTA\\train\\images\\part2\\images',
         'E:\\Data\\Raw\\DOTA\\train\\images\\part3\\images']
-    train_filename = 'dota2coco_train.json'
+    train_dest_folder = 'E:\\Data\\Processed\\DOTACOCO\\metadata\\train'
     # note i'm using horizontal labels now
     val_label_path = r'E:\Data\Raw\DOTA\val\labelTxt-v1.5\DOTA-v1.5_val_hbb'
     val_image_paths = [r'E:\Data\Raw\DOTA\val\part1\images']
-    val_filename = 'dota2coco_val.json'
-    dest_folder = 'E:\\Data\\Processed\\DOTACOCO'
+    val_dest_folder = 'E:\\Data\\Processed\\DOTACOCO\\metadata\\val'
 
     #DOTA2COCO(
     #    train_label_path,
     #    train_image_paths,
     #    dest_folder,
     #    train_filename)
-    DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
+    DOTA2COCO(train_label_path, train_image_paths, train_dest_folder)
