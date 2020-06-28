@@ -103,9 +103,6 @@ def DOTA2COCO(
     #i = 0
     null_gsd_sources = []
     for label in all_labels:
-        #i += 1
-        #if i == 1100:
-        #    print('hi')
         all_sources = []
         all_gsds = []
         for my_file in all_labels:

@@ -58,12 +58,16 @@ class BoundingBox: # horizontal
     def to_coords(self):
         """
         Clockwise from top left
+
+        Although it might seem to make more sense to return the x and y coords as tuples,
+        the result works better with pycocotools if they are just a long list
+
+        oh wait... maybe they should be list of lists?
         """
-        return (self.top_left_x, self.top_left_y), (self.top_left_x +
-                                                    self.width, self.top_left_y), (self.top_left_x +
-                                                                                   self.width, self.top_left_y +
-                                                                                   self.height), (self.top_left_x, self.top_left_y +
-                                                                                                  self.height)
+        return [[self.top_left_x, self.top_left_y,
+                 self.top_left_x + self.width, self.top_left_y,
+                 self.top_left_x + self.width, self.top_left_y + self.height,
+                 self.top_left_x, self.top_left_y + self.height]]
 
     def to_polygon(self):
         return Polygon(self.to_coords())

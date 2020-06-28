@@ -13,9 +13,7 @@ annotation dicts, and a license dict
 This file dumps a datadict, which contains everything
 
 
-
 """
-#from cv_dataclass.bounding_box import BoundingBox
 from src.cv_dataclass.bounding_box import BoundingBox
 import json
 import os
@@ -104,8 +102,7 @@ def DOTA2COCO(
         label_path: PathOrStr,
         image_paths: List[PathOrStr],
         dest_folder: PathOrStr,
-        dest_filename: PathOrStr,
-        analyze_metadata: bool = False):
+        dest_filename: PathOrStr):
 
     # Convert all to pathlib Paths
     label_path = Path(label_path)
@@ -182,10 +179,5 @@ if __name__ == "__main__":
     val_filename = 'dota2coco_val.json'
     dest_folder = 'E:\\Data\\Processed\\DOTACOCO'
 
-    DOTA2COCO(
-        train_label_path,
-        train_image_paths,
-        dest_folder,
-        train_filename,
-        analyze_metadata=True)
-    #DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
+    DOTA2COCO(train_label_path, train_image_paths, dest_folder, train_filename)
+    DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
