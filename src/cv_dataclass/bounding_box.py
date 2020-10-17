@@ -1,3 +1,7 @@
+"""
+The point of this module is to provide a simple class for datasets that can easily be exported to other types.
+"""
+
 from dataclasses import dataclass
 from shapely.geometry import Polygon
 
