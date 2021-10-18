@@ -7,7 +7,7 @@ from shapely.geometry import Polygon
 
 
 @dataclass
-class BoundingBox: # horizontal
+class BoundingBox:  # horizontal
     top_left_x: float
     top_left_y: float
     width: float
@@ -22,8 +22,7 @@ class BoundingBox: # horizontal
         if not shapely_poly.is_valid:
             print("bad poly corrected")
             buffer_pts = shapely_poly.buffer(0).exterior.coords.xy
-            fixed_coords = [[int(buffer_pts[0][i]), int(buffer_pts[1][i])]
-                            for i in range(len(buffer_pts[0]))]
+            fixed_coords = [[int(buffer_pts[0][i]), int(buffer_pts[1][i])] for i in range(len(buffer_pts[0]))]
             shapely_poly = Polygon(fixed_coords)
         return shapely_poly
 
@@ -43,8 +42,7 @@ class BoundingBox: # horizontal
         # bad data check and correct
         if not shapely_poly.is_valid:
             buffer_pts = shapely_poly.buffer(0).exterior.coords.xy
-            fixed_coords = [[int(buffer_pts[0][i]), int(buffer_pts[1][i])]
-                            for i in range(len(buffer_pts[0]))]
+            fixed_coords = [[int(buffer_pts[0][i]), int(buffer_pts[1][i])] for i in range(len(buffer_pts[0]))]
             shapely_poly = Polygon(fixed_coords)
         x, y = shapely_poly.exterior.coords.xy
         top_left_x = min(x)
@@ -53,7 +51,7 @@ class BoundingBox: # horizontal
         height = max(y) - top_left_y
         return BoundingBox(top_left_x, top_left_y, width, height, category)
 
-    def to_coco(self): # w h switched in coco vs pascal?
+    def to_coco(self):  # w h switched in coco vs pascal?
         return self.top_left_x, self.top_left_y, self.width, self.height
 
     def to_pascal(self):
@@ -68,10 +66,18 @@ class BoundingBox: # horizontal
 
         oh wait... maybe they should be list of lists?
         """
-        return [[self.top_left_x, self.top_left_y,
-                 self.top_left_x + self.width, self.top_left_y,
-                 self.top_left_x + self.width, self.top_left_y + self.height,
-                 self.top_left_x, self.top_left_y + self.height]]
+        return [
+            [
+                self.top_left_x,
+                self.top_left_y,
+                self.top_left_x + self.width,
+                self.top_left_y,
+                self.top_left_x + self.width,
+                self.top_left_y + self.height,
+                self.top_left_x,
+                self.top_left_y + self.height,
+            ]
+        ]
 
     def to_polygon(self):
         return Polygon(self.to_coords())
