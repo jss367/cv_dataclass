@@ -26,22 +26,23 @@ PathOrStr = Union[Path, str]
 
 # https://captain-whu.github.io/DOAI2019/dataset.html
 dota_category_dict = {
-    'plane': 1,
-    'ship': 2,
-    'storage-tank': 2,
-    'baseball-diamond': 3,
-    'tennis-court': 4,
-    'basketball-court': 5,
-    'ground-track-field': 6,
-    'harbor': 7,
-    'bridge': 8,
-    'small-vehicle': 9,
-    'large-vehicle': 10,
-    'helicopter': 11,
-    'roundabout': 12,
-    'soccer-ball-field': 13,
-    'swimming-pool': 14,
-    'container-crane': 15}
+    "plane": 1,
+    "ship": 2,
+    "storage-tank": 2,
+    "baseball-diamond": 3,
+    "tennis-court": 4,
+    "basketball-court": 5,
+    "ground-track-field": 6,
+    "harbor": 7,
+    "bridge": 8,
+    "small-vehicle": 9,
+    "large-vehicle": 10,
+    "helicopter": 11,
+    "roundabout": 12,
+    "soccer-ball-field": 13,
+    "swimming-pool": 14,
+    "container-crane": 15,
+}
 
 
 class InputDataException(Exception):
@@ -53,14 +54,14 @@ def parse_label_file(filename: Path):
     parse through the DOTA label files
     """
     objects = []
-    with open(filename, 'r') as f:
+    with open(filename, "r") as f:
         for _, line in enumerate(f):
-            splitlines = line.strip().split(' ')
+            splitlines = line.strip().split(" ")
             if len(splitlines) == 1:
-                if 'imagesource' in line:
-                    _, source = splitlines[0].split(':')
-                elif 'gsd' in line:
-                    _, gsd = splitlines[0].split(':')
+                if "imagesource" in line:
+                    _, source = splitlines[0].split(":")
+                elif "gsd" in line:
+                    _, gsd = splitlines[0].split(":")
                 else:
                     print("unknown metadata field")
                 continue
@@ -70,19 +71,22 @@ def parse_label_file(filename: Path):
             category = None
             if len(splitlines) >= 9:
                 category = splitlines[8]
-            bbox = BoundingBox.read_dota_data([
-                (float(splitlines[0]), float(splitlines[1])),
-                (float(splitlines[2]), float(splitlines[3])),
-                (float(splitlines[4]), float(splitlines[5])),
-                (float(splitlines[6]), float(splitlines[7])),
-            ], category)
-            bbox.difficult = '0' if len(splitlines) == 9 else splitlines[9]
+            bbox = BoundingBox.read_dota_data(
+                [
+                    (float(splitlines[0]), float(splitlines[1])),
+                    (float(splitlines[2]), float(splitlines[3])),
+                    (float(splitlines[4]), float(splitlines[5])),
+                    (float(splitlines[6]), float(splitlines[7])),
+                ],
+                category,
+            )
+            bbox.difficult = "0" if len(splitlines) == 9 else splitlines[9]
             objects.append(bbox)
     return objects, source, gsd
 
 
 def get_files(my_dir: Path):
-    files_and_folders = my_dir.glob('**/*')
+    files_and_folders = my_dir.glob("**/*")
     files = [f for f in files_and_folders if f.is_file()]
     return files
 
@@ -91,18 +95,14 @@ def create_image_item(im_path: Path, image_id: int):
     im = cv2.imread(str(im_path))
     height, width, channels = im.shape
     image_data = {}
-    image_data['file_name'] = im_path.name
-    image_data['height'] = height
-    image_data['width'] = width
-    image_data['id'] = image_id
+    image_data["file_name"] = im_path.name
+    image_data["height"] = height
+    image_data["width"] = width
+    image_data["id"] = image_id
     return image_data
 
 
-def DOTA2COCO(
-        label_path: PathOrStr,
-        image_paths: List[PathOrStr],
-        dest_folder: PathOrStr,
-        dest_filename: PathOrStr):
+def DOTA2COCO(label_path: PathOrStr, image_paths: List[PathOrStr], dest_folder: PathOrStr, dest_filename: PathOrStr):
 
     # Convert all to pathlib Paths
     label_path = Path(label_path)
@@ -119,15 +119,16 @@ def DOTA2COCO(
         all_images.extend(get_files(path))
 
     assert len(all_labels) == len(
-        all_images), f"Should have equal labels and images, but have {len(all_labels)} labels and {len(all_images)} images"
+        all_images
+    ), f"Should have equal labels and images, but have {len(all_labels)} labels and {len(all_images)} images"
 
     data_dict = {}
-    data_dict['images'] = []
-    data_dict['categories'] = []
-    data_dict['annotations'] = []
+    data_dict["images"] = []
+    data_dict["categories"] = []
+    data_dict["annotations"] = []
     for idex, name in enumerate(dota_category_dict):
-        single_cat = {'id': idex + 1, 'name': name, 'supercategory': name}
-        data_dict['categories'].append(single_cat)
+        single_cat = {"id": idex + 1, "name": name, "supercategory": name}
+        data_dict["categories"].append(single_cat)
 
     inst_count = 1
     image_id = 1
@@ -137,8 +138,8 @@ def DOTA2COCO(
     all_objects = []
     for my_file in all_images:
 
-        data_dict['images'].append(create_image_item(my_file, image_id))
-        label_file = label_path / (my_file.stem + '.txt')
+        data_dict["images"].append(create_image_item(my_file, image_id))
+        label_file = label_path / (my_file.stem + ".txt")
 
         objects, sources, gsds = parse_label_file(label_file)
         all_sources.append(sources)
@@ -146,38 +147,39 @@ def DOTA2COCO(
         all_objects.append(objects)
         for obj in objects:
             single_obj = {}
-            single_obj['area'] = obj.area
-            single_obj['category_id'] = dota_category_dict[obj.category]
-            single_obj['segmentation'] = obj.to_coords()
-            single_obj['iscrowd'] = 0
-            single_obj['bbox'] = obj.to_coco()
-            single_obj['image_id'] = image_id
-            data_dict['annotations'].append(single_obj)
-            single_obj['id'] = inst_count
+            single_obj["area"] = obj.area
+            single_obj["category_id"] = dota_category_dict[obj.category]
+            single_obj["segmentation"] = obj.to_coords()
+            single_obj["iscrowd"] = 0
+            single_obj["bbox"] = obj.to_coco()
+            single_obj["image_id"] = image_id
+            data_dict["annotations"].append(single_obj)
+            single_obj["id"] = inst_count
             inst_count = inst_count + 1
         image_id = image_id + 1
 
     output_json = dest_folder / dest_filename
-    with open(output_json, 'w') as f_out:
+    with open(output_json, "w") as f_out:
         json.dump(data_dict, f_out)
 
-    with open('objs.pkl', 'wb') as f:
+    with open("objs.pkl", "wb") as f:
         pickle.dump(all_objects, f)
 
 
 if __name__ == "__main__":
 
-    train_label_path = 'E:\\Data\\Raw\\DOTA\\train\\labelTxt\\DOTA-v1.5_train'
+    train_label_path = "E:\\Data\\Raw\\DOTA\\train\\labelTxt\\DOTA-v1.5_train"
     train_image_paths = [
-        'E:\\Data\\Raw\\DOTA\\train\\images\\part1\\images',
-        'E:\\Data\\Raw\\DOTA\\train\\images\\part2\\images',
-        'E:\\Data\\Raw\\DOTA\\train\\images\\part3\\images']
-    train_filename = 'dota2coco_train.json'
+        "E:\\Data\\Raw\\DOTA\\train\\images\\part1\\images",
+        "E:\\Data\\Raw\\DOTA\\train\\images\\part2\\images",
+        "E:\\Data\\Raw\\DOTA\\train\\images\\part3\\images",
+    ]
+    train_filename = "dota2coco_train.json"
     # note i'm using horizontal labels now
-    val_label_path = r'E:\Data\Raw\DOTA\val\labelTxt-v1.5\DOTA-v1.5_val_hbb'
-    val_image_paths = [r'E:\Data\Raw\DOTA\val\part1\images']
-    val_filename = 'dota2coco_val.json'
-    dest_folder = 'E:\\Data\\Processed\\DOTACOCO'
+    val_label_path = r"E:\Data\Raw\DOTA\val\labelTxt-v1.5\DOTA-v1.5_val_hbb"
+    val_image_paths = [r"E:\Data\Raw\DOTA\val\part1\images"]
+    val_filename = "dota2coco_val.json"
+    dest_folder = "E:\\Data\\Processed\\DOTACOCO"
 
     DOTA2COCO(train_label_path, train_image_paths, dest_folder, train_filename)
     DOTA2COCO(val_label_path, val_image_paths, dest_folder, val_filename)
